@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UROGuard - CAUTI Surveillance System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="antialiased text-slate-800">
+
+    <div id="app" class="min-h-screen p-4 sm:p-6 lg:p-8">
+        <div class="max-w-7xl mx-auto">
+            <header class="mb-8">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-3xl font-bold text-slate-900 tracking-tight" data-translate="headerTitle">UROGuard</h1>
+                        <p class="text-slate-500 mt-1" data-translate="headerSubtitle">Dashboard ติดตาม เฝ้าระวัง และแจ้งเตือนภาวะ CAUTI</p>
+                    </div>
+                    <div class="flex items-center gap-4 w-full sm:w-auto">
+                        <button id="addPatientBtn" class="w-full sm:w-auto bg-indigo-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-md hover:bg-indigo-700 transition-all duration-200 flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                            <span data-translate="addPatientBtn">เพิ่มข้อมูลผู้ป่วยใหม่</span>
+                        </button>
+                        <button id="langSwitcher" class="p-2 rounded-md hover:bg-slate-200 text-slate-600 font-semibold"></button>
+                    </div>
+                </div>
+            </header>
+
+            <section class="mb-8">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border col-span-1 lg:col-span-3">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4" data-translate="dailySummaryTitle">ข้อมูลสรุปรายวัน</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                            <div class="bg-sky-50 p-4 rounded-lg">
+                                <p class="text-3xl font-bold text-sky-600" id="currentPatientsCount">0</p>
+                                <p class="text-sm font-medium text-sky-800" data-translate="activePatients">ผู้ป่วยคาสายสวน (คน)</p>
+                            </div>
+                            <div class="bg-amber-50 p-4 rounded-lg">
+                                <p class="text-3xl font-bold text-amber-600" id="reviewNeededCount">0</p>
+                                <p class="text-sm font-medium text-amber-800" data-translate="reviewNeeded">ต้องทบทวน (คน)</p>
+                            </div>
+                             <div class="bg-rose-50 p-4 rounded-lg">
+                                <p class="text-3xl font-bold text-rose-600" id="urgentCount">0</p>
+                                <p class="text-sm font-medium text-rose-800" data-translate="urgentReview">ทบทวนเร่งด่วน (คน)</p>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg">
+                                <p class="text-3xl font-bold text-purple-600" id="alertCount">0</p>
+                                <p class="text-sm font-medium text-purple-800" data-translate="overdue">เกิน 14 วัน (คน)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border lg:col-span-2">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4" data-translate="monthlyTrendTitle">แนวโน้มวันคาสายสวนสะสม</h3>
+                        <div class="h-64"><canvas id="monthlyChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4" data-translate="utiRateTitle">อัตราติดเชื้อ UTI (ต่อ 1,000 วัน)</h3>
+                        <div class="h-64"><canvas id="utiRateChart"></canvas></div>
+                    </div>
+                </div>
+            </section>
+            
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight mb-6" data-translate="patientListTitle">รายชื่อผู้ป่วย</h2>
+            <main id="patientGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></main>
+
+            <footer class="mt-12 text-center text-xs text-slate-500">
+                <p data-translate="footerLine1">พัฒนาโดย อาจารย์อรรถวิทย์ จันทร์ศิริ</p>
+                <p data-translate="footerLine2">คณะพยาบาลศาสตร์แมคคอร์มิค มหาวิทยาลัยพายัพ</p>
+            </footer>
+        </div>
+    </div>
+    
+    <div id="patientModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg m-4" onclick="event.stopPropagation()">
+            <form id="patientForm" class="flex flex-col max-h-[90vh]">
+                <div class="p-6 border-b flex justify-between items-center">
+                    <h3 class="text-xl font-semibold text-slate-800" data-translate="modalAddTitle">เพิ่มผู้ป่วยใหม่</h3>
+                    <button type="button" class="cancel-btn text-slate-400 text-2xl hover:text-slate-600 transition-colors">&times;</button>
+                </div>
+                <div class="p-8 bg-slate-50 overflow-y-auto">
+                    <div id="formPage1" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold mb-1">HN</label>
+                            <input type="text" id="hn" required class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">ชื่อ-นามสกุล</label>
+                            <div class="flex gap-2">
+                                <select id="patientTitle" class="border rounded-lg p-3 bg-white w-24">
+                                    <option value="นาย">นาย</option>
+                                    <option value="นาง">นาง</option>
+                                    <option value="น.ส.">น.ส.</option>
+                                    <option value="ด.ช.">ด.ช.</option>
+                                    <option value="ด.ญ.">ด.ญ.</option>
+                                </select>
+                                <input type="text" id="patientNameInput" required class="flex-1 border rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">ข้อบ่งชี้</label>
+                            <input type="text" id="indication" required class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">วันที่ใส่</label>
+                            <input type="date" id="catheterStartDate" required class="w-full border rounded-lg p-3">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">คะแนนความเสี่ยง</label>
+                            <input type="number" id="riskScore" class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                    </div>
+                    <div id="formPage2" class="hidden space-y-4">
+                        <h4 class="font-bold border-b pb-2">Pre-Insertion ก่อนใส่</h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" name="pre" value="indication" class="w-4 h-4"> มีข้อบ่งชี้จำเป็น</label>
+                            <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" name="pre" value="alt" class="w-4 h-4"> พิจารณาทางเลือกอื่นแล้ว</label>
+                            <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" name="pre" value="hygiene" class="w-4 h-4"> ล้างมือ/ทำความสะอาดแล้ว</label>
+                        </div>
+                        <h4 class="font-bold border-b pb-2 pt-4">ขณะใส่ (Insertion)</h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" name="ins" value="sterile" class="w-4 h-4"> ใช้อุปกรณ์ปลอดเชื้อ</label>
+                            <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" name="ins" value="antiseptic" class="w-4 h-4"> ใช้น้ำยาฆ่าเชื้อ</label>
+                            <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" name="ins" value="secure" class="w-4 h-4"> ยึดตรึงแน่นหนา</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-4 border-t flex justify-between bg-white rounded-b-xl">
+                    <button type="button" class="cancel-btn px-4 py-2 border rounded-lg hover:bg-slate-50 transition-colors">ยกเลิก</button>
+                    <div class="flex gap-2">
+                        <button type="button" id="formBackButton" class="hidden px-4 py-2 border rounded-lg hover:bg-slate-50 transition-colors">กลับ</button>
+                        <button type="button" id="formNextButton" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-md transition-all">ถัดไป</button>
+                        <button type="submit" id="formSaveButton" class="hidden px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-md transition-all">บันทึก</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="reviewModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg m-4" onclick="event.stopPropagation()">
+            <form id="reviewForm" class="flex flex-col max-h-[90vh]">
+                <input type="hidden" id="reviewPatientId">
+                <div class="p-6 border-b">
+                    <h3 class="text-xl font-bold">ทบทวน / ถอดสายสวน</h3>
+                    <p id="reviewPatientInfo" class="text-sm text-slate-500"></p>
+                </div>
+                <div class="p-6 bg-slate-50 overflow-y-auto space-y-6">
+                    <div class="bg-white p-4 border rounded-lg flex flex-col gap-2">
+                        <label class="flex items-center gap-3 cursor-pointer"><input type="radio" name="reviewAction" value="review" checked class="w-4 h-4"> ทบทวน (คาสายต่อ)</label>
+                        <label class="flex items-center gap-3 cursor-pointer"><input type="radio" name="reviewAction" value="remove" class="w-4 h-4"> ถอดสายสวน</label>
+                    </div>
+                    <div id="catheterCareChecklist" class="space-y-3">
+                        <h4 class="font-bold">Checklist การดูแล</h4>
+                        <label class="flex items-center gap-3 cursor-pointer text-sm"><input type="checkbox" value="closed" class="w-4 h-4"> รักษาระบบปิด (Closed System)</label>
+                        <label class="flex items-center gap-3 cursor-pointer text-sm"><input type="checkbox" value="below" class="w-4 h-4"> ถุงต่ำกว่ากระเพาะปัสสาวะเสมอ</label>
+                        <label class="flex items-center gap-3 cursor-pointer text-sm"><input type="checkbox" value="unobstructed" class="w-4 h-4"> สายไม่พับงอ (Unobstructed Flow)</label>
+                        <label class="flex items-center gap-3 cursor-pointer text-sm"><input type="checkbox" value="secure" class="w-4 h-4"> ยึดตรึงป้องกันการดึงรั้ง</label>
+                        <label class="flex items-center gap-3 cursor-pointer text-sm"><input type="checkbox" value="clean" class="w-4 h-4"> ทำความสะอาดอวัยวะสืบพันธุ์ทุกวัน</label>
+                        <label class="flex items-center gap-3 cursor-pointer text-sm"><input type="checkbox" value="floor" class="w-4 h-4"> ถุงปัสสาวะไม่วางบนพื้น</label>
+                    </div>
+                    <div id="removalDateContainer" class="hidden">
+                        <label class="block text-sm font-bold mb-1">วันที่ถอด</label>
+                        <input type="date" id="removalDate" class="w-full border rounded-lg p-3">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1">ชื่อพยาบาลผู้ทบทวน</label>
+                        <input type="text" id="reviewerName" required class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <label class="flex items-center gap-3 font-bold text-rose-600 cursor-pointer"><input type="checkbox" id="hasUTI" class="w-5 h-5"> พบการติดเชื้อ (UTI)</label>
+                </div>
+                <div class="p-4 border-t flex justify-between bg-white rounded-b-xl">
+                    <span id="lastReviewedDisplay" class="text-xs text-slate-400 self-center"></span>
+                    <div class="flex gap-2">
+                        <button type="button" class="cancel-btn px-4 py-2 border rounded-lg hover:bg-slate-50 transition-colors">ยกเลิก</button>
+                        <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-md transition-all">บันทึกผล</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
