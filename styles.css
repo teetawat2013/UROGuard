@@ -1,0 +1,44 @@
+body { 
+    font-family: 'Sarabun', 'Inter', sans-serif; 
+    background-color: #f8fafc; 
+}
+.modal-backdrop { 
+    background-color: rgba(17, 24, 39, 0.6); 
+    backdrop-filter: blur(4px); 
+}
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #e5e7eb; }
+::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+.status-badge { 
+    padding: 4px 12px; 
+    border-radius: 9999px; 
+    font-weight: 600; 
+    font-size: 0.8rem; 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 6px; 
+}
+.status-badge-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.status-normal { background-color: #cffafe; color: #0891b2; } 
+.status-normal .status-badge-dot { background-color: #0891b2;}
+
+.status-review { background-color: #fef3c7; color: #b45309; } 
+.status-review .status-badge-dot { background-color: #b45309;}
+
+.status-urgent { background-color: #ffe4e6; color: #be123c; } 
+.status-urgent .status-badge-dot { background-color: #be123c;}
+
+.status-alert { background-color: #f3e8ff; color: #7e22ce; } 
+.status-alert .status-badge-dot { background-color: #7e22ce;}
+
+.status-removed { background-color: #d1fae5; color: #059669; } 
+.status-removed .status-badge-dot { background-color: #059669;}
+
+.patient-card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+.patient-card:hover { 
+    transform: translateY(-4px); 
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05); 
+}
